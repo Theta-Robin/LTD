@@ -1,0 +1,735 @@
+/* ============================================
+   RESET & BASE
+============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1a0a0a;
+  color: #f0e8d0;
+  min-height: 100vh;
+}
+
+/* ============================================
+   PAGE LOGIN
+============================================ */
+#pageLogin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a0a0a 0%, #2a101a 50%, #1a0a0a 100%);
+  background-image: url('https://www.roosterteeth.com/assets/img/backgrounds/henhouse.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+#pageLogin::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: -1;
+}
+
+#pageLogin h1 {
+  font-size: 2.5rem;
+  color: #ff6b6b;
+  text-shadow: 0 0 20px rgba(255,107,107,0.5);
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+  text-align: center;
+  font-weight: bold;
+}
+
+#pageLogin p {
+  color: #f0e8d0;
+  margin-bottom: 30px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+#codeInput {
+  background: rgba(26, 10, 10, 0.7);
+  border: 2px solid #ff6b6b;
+  border-radius: 12px;
+  padding: 15px 25px;
+  font-size: 1.4rem;
+  color: #f0e8d0;
+  text-align: center;
+  letter-spacing: 6px;
+  width: 300px;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#codeInput:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 20px rgba(255,107,107,0.3);
+}
+
+#codeInput::placeholder {
+  letter-spacing: 2px;
+  font-size: 0.9rem;
+  color: #9a9080;
+}
+
+#pageLogin button {
+  margin-top: 20px;
+  background: linear-gradient(135deg, #ff6b6b, #ff8c8c);
+  color: #0d0d0d;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#pageLogin button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255,107,107,0.4);
+}
+
+#loginError {
+  margin-top: 15px;
+  color: #ff6b6b !important;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   LAYOUT GÉNÉRAL (EMPLOYÉ + PATRON)
+============================================ */
+#pageEmployee,
+#pagePatron {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+/* ============================================
+   HEADER / PROFIL
+============================================ */
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #12121a;
+  border: 1px solid #2a1a2a;
+  border-radius: 16px;
+  padding: 20px 30px;
+  margin-bottom: 25px;
+}
+
+.header-info h2 {
+  font-size: 1.6rem;
+  color: #ff6b6b;
+}
+
+.header-info p {
+  color: #9a9080;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 6px;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.badge-role {
+  background: rgba(255,107,107,0.15);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.badge-grade-debutant {
+  background: rgba(85,135,224,0.15);
+  color: #5587e0;
+  border: 1px solid #5587e0;
+}
+
+.badge-grade-intermediaire {
+  background: rgba(255,107,107,0.15);
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b;
+}
+
+.badge-grade-profesionnel {
+  background: rgba(85,224,154,0.15);
+  color: #55e09a;
+  border: 1px solid #55e09a;
+}
+
+.badge-patron {
+  background: rgba(224,85,85,0.15);
+  color: #e05555;
+  border: 1px solid #e05555;
+}
+
+/* ============================================
+   BOUTON DÉCONNEXION
+============================================ */
+.btn-logout {
+  background: transparent;
+  border: 1px solid #e05555;
+  color: #e05555;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-logout:hover {
+  background: #e05555;
+  color: #fff;
+}
+
+/* ============================================
+   CARDS
+============================================ */
+.card {
+  background: #1a1a2a;
+  border: 1px solid #2a1a2a;
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.card h3 {
+  font-size: 1rem;
+  color: #ff6b6b;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a1a2a;
+}
+
+/* ============================================
+   STATS ARGENT
+============================================ */
+.money-display {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #55e09a;
+  text-shadow: 0 0 20px rgba(85,224,154,0.3);
+}
+
+.money-sub {
+  color: #9a9080;
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+/* ============================================
+   GRILLE STATS
+============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  background: #1a1a28;
+  border: 1px solid #2a1a2a;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-box .stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ff6b6b;
+}
+
+.stat-box .stat-label {
+  font-size: 0.8rem;
+  color: #9a9080;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ============================================
+   FORMULAIRE VENTE
+============================================ */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: #9a9080;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.form-group input[type="number"],
+.form-group input[type="text"],
+select {
+  background: #1a1a28;
+  border: 1px solid #2a1a2a;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: #f0e8d0;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  -moz-appearance: textfield;
+}
+
+.form-group input[type="number"]::-webkit-outer-spin-button,
+.form-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.form-group input:focus,
+select:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 15px rgba(255,107,107,0.2);
+}
+
+select {
+  cursor: pointer;
+}
+
+select option {
+  background: #1a1a28;
+}
+
+/* ============================================
+   ZONE PHOTO / UPLOAD
+============================================ */
+.upload-zone {
+  border: 2px dashed #2a1a2a;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s;
+  position: relative;
+}
+
+.upload-zone:hover {
+  border-color: #ff6b6b;
+  background: rgba(255,107,107,0.05);
+}
+
+.upload-zone input[type="file"] {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-zone p {
+  color: #9a9080;
+  font-size: 0.9rem;
+}
+
+.upload-zone .upload-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  display: block;
+}
+
+#photoPreview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 15px;
+  border: 1px solid #2a1a2a;
+}
+
+/* ============================================
+   CALCUL RÉSULTAT
+============================================ */
+.calc-box {
+  background: #1a1a28;
+  border: 1px solid #2a1a2a;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 15px 0;
+  min-height: 50px;
+}
+
+.calc-box .calc-total {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f0e8d0;
+}
+
+.calc-box .calc-prime {
+  font-size: 1rem;
+  color: #55e09a;
+  margin-top: 5px;
+}
+
+.calc-box .calc-warning {
+  font-size: 0.9rem;
+  color: #ff6b6b;
+  margin-top: 5px;
+}
+
+/* ============================================
+   BOUTONS
+============================================ */
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b6b, #ff8c8c);
+  color: #0d0d0d;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 35px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255,107,107,0.35);
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #e05555;
+  color: #e05555;
+  border-radius: 10px;
+  padding: 10px 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-danger:hover {
+  background: #e05555;
+  color: #fff;
+}
+
+.btn-pdf {
+  background: linear-gradient(135deg, #5587e0, #7aa8ff);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-pdf:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(85,135,224,0.35);
+}
+
+/* ============================================
+   MESSAGES
+============================================ */
+.msg-success {
+  color: #55e09a;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  padding: 10px 15px;
+  background: rgba(85,224,154,0.1);
+  border: 1px solid rgba(85,224,154,0.3);
+  border-radius: 8px;
+  display: none;
+}
+
+.msg-error {
+  color: #e05555;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  padding: 10px 15px;
+  background: rgba(224,85,85,0.1);
+  border: 1px solid rgba(224,85,85,0.3);
+  border-radius: 8px;
+  display: none;
+}
+
+/* ============================================
+   TABLEAU HISTORIQUE
+============================================ */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.history-table th {
+  background: #1a1a28;
+  color: #ff6b6b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.75rem;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #2a1a2a;
+}
+
+.history-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #1a1a28;
+  color: #f0e8d0;
+  vertical-align: middle;
+}
+
+.history-table tr:hover td {
+  background: #1a1a28;
+}
+
+.history-table .td-money {
+  color: #55e09a;
+  font-weight: 700;
+}
+
+.history-table .td-prime {
+  color: #ff6b6b;
+  font-weight: 700;
+}
+
+.history-table img {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #2a1a2a;
+}
+
+.no-data {
+  text-align: center;
+  color: #9a9080;
+  padding: 30px;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   TOTAL LIGNE
+============================================ */
+.total-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a28;
+  border: 1px solid #2a1a2a;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-top: 15px;
+}
+
+.total-line span:first-child {
+  color: #9a9080;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.total-line span:last-child {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #55e09a;
+}
+
+/* ============================================
+   SECTION PATRON - EMPLOYÉ ROW
+============================================ */
+.emp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a28;
+  border: 1px solid #2a1a2a;
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.emp-row .emp-info {
+  flex: 1;
+}
+
+.emp-row .emp-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0e8d0;
+}
+
+.emp-row .emp-meta {
+  font-size: 0.8rem;
+  color: #9a9080;
+  margin-top: 3px;
+}
+
+.emp-row .emp-stats {
+  text-align: right;
+}
+
+.emp-row .emp-total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #55e09a;
+}
+
+.emp-row .emp-prime {
+  font-size: 0.85rem;
+  color: #ff6b6b;
+  margin-top: 3px;
+}
+
+/* ============================================
+   RESET SECTION
+============================================ */
+.reset-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reset-section select {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ============================================
+   EXPORT SECTION
+============================================ */
+.export-section {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.export-section select {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ============================================
+   SCROLLBAR
+============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a1a2a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6b6b;
+}
+
+/* ============================================
+   RESPONSIVE
+============================================ */
+@media (max-width: 600px) {
+  #pageEmployee,
+  #pagePatron {
+    padding: 15px 12px;
+  }
+
+  .header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .money-display {
+    font-size: 2rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .history-table {
+    font-size: 0.78rem;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 8px 10px;
+  }
+
+  .reset-section,
+  .export-section {
+    flex-direction: column;
+  }
+
+  #pageLogin h1 {
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  #codeInput {
+    width: 260px;
+  }
+}
+.employee-creation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.employee-creation .form-group {
+  margin-bottom: 10px;
+}
+
+.employee-creation .form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.employee-creation .form-group input,
+.employee-creation .form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.employee-creation button {
+  grid-column: span 2;
+}

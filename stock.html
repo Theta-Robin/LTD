@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de Stock - LTD</title>
+  <link rel="stylesheet" href="stock.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ========== PAGE LOGIN ========== -->
+  <div id="pageLogin" class="login-container">
+  <h1>LTD</h1>
+    <p>Entrez votre code à 10 chiffres</p>
+    <input id="codeInput" type="text" maxlength="10" placeholder="Code à 10 chiffres"/>
+    <br/>
+    <button onclick="login()">Se connecter</button>
+    <p id="loginError" style="display:none" class="msg-error">❌ Code invalide ou introuvable</p>
+  </div>
+
+  <!-- ========== PAGE STOCK ========== -->
+  <div id="pageStock" style="display:none">
+    <div class="stock-container">
+      <button id="stockButton" class="btn-primary" onclick="window.location.href='stock.html'" style="display:none; margin: 10px;">📦 Gestion du Stock</button>
+
+      <div class="header-bar">
+        <div class="header-info">
+          <h2 id="empNom"></h2>
+          <div style="margin-top:8px">
+            <span id="empRoleBadge" class="badge badge-role"></span>
+            <span id="empGradeBadge" class="badge"></span>
+          </div>
+          <p style="margin-top:6px;color:#555;font-size:0.8rem" id="empCode"></p>
+        </div>
+        <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+      </div>
+
+      <h1>📦 Gestion du Stock</h1>
+
+      <!-- Formulaire d'ajout de produit -->
+      <div class="add-product-form">
+        <h2>➕ Ajouter un produit</h2>
+        <div class="form-group">
+          <label for="productName">Nom du produit</label>
+          <input type="text" id="productName" placeholder="Ex: Coca-Cola">
+        </div>
+        <div class="form-group">
+          <label for="productQuantity">Quantité</label>
+          <input type="number" id="productQuantity" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label for="productPrice">Prix unitaire</label>
+          <input type="number" id="productPrice" min="0" step="0.01" value="0.00">
+        </div>
+        <button class="btn-add" onclick="addProduct()">Ajouter au stock</button>
+        <div id="addMsg" class="msg-success"></div>
+        <div id="addMsgErr" class="msg-error"></div>
+      </div>
+
+      <!-- Tableau de stock -->
+      <div class="stock-table-container">
+        <h2>📋 Stock actuel</h2>
+        <div id="stockContent">
+          <p class="no-data">Chargement du stock...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="stock.js"></script>
+</body>
+</html>

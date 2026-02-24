@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LTD - Entreprise</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- ========== PAGE LOGIN ========== -->
+<div id="pageLogin">
+  <h1>LTD</h1>
+  <p>Entrez votre code à 10 chiffres</p>
+  <input id="codeInput" type="text" maxlength="10" placeholder="Code à 10 chiffres"/>
+  <br/>
+  <button onclick="login()">Se connecter</button>
+  <p id="loginError" style="display:none" class="msg-error">❌ Code invalide ou introuvable</p>
+</div>
+
+<!-- ========== PAGE EMPLOYÉ ========== -->
+<div id="pageEmployee" style="display:none">
+  <img src="assets/ltd.jpg" alt="Logo de l'entreprise" class="company-logo"/>
+  <!-- Header -->
+  <div class="header-bar">
+    <div class="header-info">
+      <h2 id="empNom"></h2>
+      <div style="margin-top:8px">
+        <span id="empRoleBadge" class="badge badge-role"></span>
+        <span id="empGradeBadge" class="badge"></span>
+      </div>
+      <p style="margin-top:6px;color:#555;font-size:0.8rem" id="empCode"></p>
+    </div>
+    <div class="header-buttons">
+<button id="vendeurButton" class="btn-primary" onclick="window.location.href='vendeur.html'">🛒 Gestion des ventes</button>      <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-value" id="statArgent">$0</div>
+      <div class="stat-label">💰 Argent généré</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="statItems">0</div>
+      <div class="stat-label">📦 Items vendus</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="statPrimes" style="color:#c8a84b">$0</div>
+      <div class="stat-label">🏆 Total primes</div>
+    </div>
+  </div>
+
+  <!-- Formulaire vente -->
+  <div class="card">
+    <h3>📦 Déclarer une vente</h3>
+
+    <div class="form-group">
+      <label>Nombre d'items</label>
+      <input id="itemsInput" type="number" min="0" oninput="updateItemsCalc()" placeholder="Ex: 10"/>
+    </div>
+
+    <div class="calc-box">
+      <div class="calc-total" id="calcResult">Entrez un nombre d'items...</div>
+      <div id="primeResult"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Photo du bucket</label>
+      <div class="upload-zone" id="uploadZone">
+        <span class="upload-icon">📸</span>
+        <p id="upload-text">Glisse une photo ou clique pour choisir</p>
+        <input type="file" id="photoFile" accept="image/*" onchange="previewPhoto(event)"/>
+      </div>
+      <img id="photoPreview" style="display:none"/>
+    </div>
+
+    <button class="btn-primary" onclick="submitVente()">✅ Envoyer la vente</button>
+    <div id="venteMsg" class="msg-success"></div>
+    <div id="venteMsgErr" class="msg-error"></div>
+  </div>
+
+  <!-- Historique ventes -->
+  <div class="card">
+    <h3>📋 Historique de mes Run</h3>
+    <div id="historyContent"><p class="no-data">Chargement...</p></div>
+  </div>
+
+  <!-- Historique primes -->
+  <div class="card">
+    <h3>🏆 Mes primes</h3>
+    <div id="primesContent"><p class="no-data">Chargement...</p></div>
+  </div>
+
+  <!-- Voitures disponibles -->
+  <div class="card">
+    <h3>🚗 Voitures disponibles</h3>
+    <div id="availableCars"><p class="no-data">Chargement...</p></div>
+  </div>
+
+  <!-- Section Vendeur -->
+  <div id="vendeurSection" style="display:none">
+    <!-- Sélection des articles -->
+    <div class="card">
+      <h2>📦 Sélection des articles</h2>
+      <div class="stock-items">
+        <div id="stockList"></div>
+      </div>
+    </div>
+
+    <!-- Panier -->
+    <div class="card">
+      <h2>🛒 Panier</h2>
+      <div id="cartItems"></div>
+      <div class="cart-summary">
+        <h3>Résumé</h3>
+        <p>Nombre d'articles: <span id="cartCount">0</span></p>
+        <p>Total: <span id="cartTotal">$0.00</span></p>
+      </div>
+      <div class="cart-actions">
+        <button class="btn-primary" onclick="clearCart()">🗑️ Vider le panier</button>
+        <button class="btn-primary" onclick="openInvoiceModal()">📄 Générer une facture</button>
+      </div>
+    </div>
+
+    <!-- Modal de facturation -->
+    <div id="invoiceModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeInvoiceModal()">&times;</span>
+        <h2>📄 Prévisualisation de la facture</h2>
+        <div id="invoicePreview"></div>
+        <button class="btn-primary" onclick="generateInvoice()">📥 Générer la facture</button>
+        <div id="invoiceMsg" class="msg-success"></div>
+        <div id="invoiceMsgErr" class="msg-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE PATRON ========== -->
+<div id="pagePatron" style="display:none">
+  <!-- Header -->
+  <div class="header-bar">
+    <div class="header-info">
+      <h2 id="patronNom"></h2>
+      <div style="margin-top:8px">
+        <span id="patronRoleBadge" class="badge badge-patron"></span>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button id="vendeurButton" class="btn-primary" onclick="showVendeurSection()">🛒 Gestion des ventes</button>
+      <button id="stockButton" class="btn-primary" onclick="window.location.href='stock.html'">📦 Gestion du Stock</button>
+      <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+      <button id="resetAllDataButton" class="reset-button">Réinitialiser toutes les données</button>
+
+    </div>
+  </div>
+
+  <!-- Stats globales -->
+  
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-value" id="globalCA" style="color:#55e09a">$0</div>
+      <div class="stat-label">💰 Chiffre d'affaires</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="globalItems">0</div>
+      <div class="stat-label">📦 Items totaux</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="globalPrimes" style="color:#c8a84b">$0</div>
+      <div class="stat-label">🏆 Primes totales</div>
+    </div>
+    <!-- NOUVEAU BLOC AJOUTÉ ICI -->
+    <div class="stat-box">
+      <div class="stat-value" id="totalFacturesAmount" style="color:#4CAF50">$0</div>
+      <div class="stat-label">📈 Revenu Total (Ventes + Primes)</div>
+    </div>
+  </div>
+
+  <!-- Employés -->
+  <div class="card">
+    <h3>👥 Tous les employés</h3>
+    <div id="allEmployees"><p class="no-data">Chargement...</p></div>
+  </div>
+<!-- Toutes les ventes -->
+<div class="card">
+  <h3>📂 Toutes les runs</h3>
+  <div id="allVentes"><p class="no-data">Chargement...</p></div>
+</div>
+
+
+  <!-- Reset -->
+  <div class="card">
+    <h3>🔄 Reset les ventes d'un employé</h3>
+    <div class="reset-section">
+      <select id="resetSelect"></select>
+      <button class="btn-danger" onclick="resetEmployee(document.getElementById('resetSelect').value)">🔄 Reset</button>
+    </div>
+    <div id="resetMsg" class="msg-success" style="margin-top:12px"></div>
+    <div id="resetMsgErr" class="msg-error" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Export PDF -->
+  <div class="card">
+    <h3>📄 Export PDF</h3>
+    <div class="export-section">
+      <select id="exportSelect"></select>
+      <button class="btn-pdf" onclick="exportPDF()">📥 Télécharger PDF</button>
+    </div>
+  </div>
+
+  <!-- Gestion des voitures -->
+  <div class="card">
+    <h3>🚗 Gestion des voitures</h3>
+    <div class="car-management">
+      <div class="form-group">
+        <label>Modèle</label>
+        <input id="carModel" type="text" placeholder="Ex: Tesla Model S"/>
+      </div>
+      <div class="form-group">
+        <label>Marque</label>
+        <input id="carBrand" type="text" placeholder="Ex: Tesla"/>
+      </div>
+      <div class="form-group">
+        <label>Couleur</label>
+        <input id="carColor" type="text" placeholder="Ex: Rouge"/>
+      </div>
+      <div class="form-group">
+        <label>Plaque d'immatriculation</label>
+        <input id="carLicensePlate" type="text" placeholder="Ex: ABC123"/>
+      </div>
+      <div class="form-group">
+        <label>Photo de la voiture</label>
+        <div class="upload-zone" id="carUploadZone">
+          <span class="upload-icon">📸</span>
+          <p id="carUploadText">Glisse une photo ou clique pour choisir</p>
+          <input type="file" id="carPhotoFile" accept="image/*" onchange="previewCarPhoto(event)"/>
+        </div>
+        <img id="carPhotoPreview" style="display:none"/>
+      </div>
+      <select id="carEmployeeSelect">
+        <option value="">-- Sélectionner un employé --</option>
+      </select>
+      <button class="btn-primary" onclick="assignCar()">🚗 Assigner une voiture</button>
+    </div>
+    <div id="carMsg" class="msg-success" style="margin-top:12px"></div>
+    <div id="carMsgErr" class="msg-error" style="margin-top:12px"></div>
+  </div>
+<!-- Création d'employés -->
+<div class="card">
+  <h3>👥 Création d'employés</h3>
+  <div class="employee-creation">
+    <div class="form-group">
+      <label>Prénom</label>
+      <input id="newEmpPrenom" type="text" placeholder="Prénom de l'employé"/>
+    </div>
+    <div class="form-group">
+      <label>Nom</label>
+      <input id="newEmpNom" type="text" placeholder="Nom de l'employé"/>
+    </div>
+    <div class="form-group">
+      <label>Rôle</label>
+      <input id="newEmpRole" type="text" placeholder="Rôle de l'employé"/>
+    </div>
+    <div class="form-group">
+      <label>Grade</label>
+      <select id="newEmpGrade">
+        <option value="debutant">Débutant</option>
+        <option value="intermediaire">Intermédiaire</option>
+        <option value="expert">Expert</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Code (10 chiffres)</label>
+      <input id="newEmpCode" type="text" maxlength="10" placeholder="Code à 10 chiffres"/>
+    </div>
+    <button class="btn-primary" onclick="createEmployee()">👥 Créer un employé</button>
+    <div id="creationMsg" class="msg-success" style="margin-top:12px"></div>
+    <div id="creationMsgErr" class="msg-error" style="margin-top:12px"></div>
+  </div>
+</div>
+
+  <!-- Gestion des employés -->
+  <div class="card">
+    <h3>👥 Gestion des employés</h3>
+    <div class="employee-management">
+      <select id="employeeSelect"></select>
+      <select id="gradeSelect">
+        <option value="debutant">Débutant</option>
+        <option value="intermediaire">Intermédiaire</option>
+        <option value="expert">Expert</option>
+      </select>
+      <button class="btn-primary" onclick="updateEmployeeGrade()">🔄 Mettre à jour le grade</button>
+      <button class="btn-danger" onclick="fireEmployee()">🔥 Virer l'employé</button>
+    </div>
+    <div id="managementMsg" class="msg-success" style="margin-top:12px"></div>
+    <div id="managementMsgErr" class="msg-error" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Facturation -->
+<!-- Statistiques globales -->
+<div class="stats-grid">
+  <div class="stat-box">
+    <div class="stat-value" id="globalCA">$0</div>
+    <div class="stat-label">💰 Chiffre d'affaires</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" id="globalItems">0</div>
+    <div class="stat-label">📦 Total articles</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value" id="globalFactures" style="color:#ff0000">$0</div>
+    <div class="stat-label">💸 Factures</div>
+  </div>
+</div>
+
+<!-- Formulaire de création de facture -->
+<div class="card">
+  <h3>📄 Créer une facture</h3>
+  <div class="form-group">
+    <label>Description</label>
+    <input id="factureDescription" type="text" placeholder="Description de la facture"/>
+  </div>
+  <div class="form-group">
+    <label>Montant</label>
+    <input id="factureAmount" type="number" placeholder="Montant de la facture"/>
+  </div>
+  <div class="form-group">
+    <label>Nombre d'articles</label>
+    <input id="factureItemsCount" type="number" placeholder="Nombre d'articles"/>
+  </div>
+  <div class="form-group">
+    <label>Photo de la facture</label>
+    <div class="upload-zone" id="factureUploadZone">
+      <span class="upload-icon">📸</span>
+      <p id="factureUploadText">Glisse une photo ou clique pour choisir</p>
+      <input type="file" id="facturePhotoFile" accept="image/*" onchange="previewFacturePhoto(event)"/>
+    </div>
+    <img id="facturePhotoPreview" style="display:none"/>
+  </div>
+  <button class="btn-primary" onclick="generateFacture()">📥 Générer la facture</button>
+  <div id="factureMsg" class="msg-success"></div>
+  <div id="factureMsgErr" class="msg-error"></div>
+</div>
+
+<!-- Modal de modification de facture -->
+<div id="editFactureModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="document.getElementById('editFactureModal').style.display='none'">&times;</span>
+    <h2>📄 Modifier la facture</h2>
+    <div class="form-group">
+      <label>Description</label>
+      <input id="factureDescription" type="text" placeholder="Description de la facture"/>
+    </div>
+    <div class="form-group">
+      <label>Montant</label>
+      <input id="factureAmount" type="number" placeholder="Montant de la facture"/>
+    </div>
+    <div class="form-group">
+      <label>Nombre d'articles</label>
+      <input id="factureItemsCount" type="number" placeholder="Nombre d'articles"/>
+    </div>
+    <div class="form-group">
+      <label>Photo de la facture</label>
+      <div class="upload-zone" id="factureUploadZone">
+        <span class="upload-icon">📸</span>
+        <p id="factureUploadText">Glisse une photo ou clique pour choisir</p>
+        <input type="file" id="editFacturePhotoFile" accept="image/*" onchange="previewFacturePhoto(event)"/>
+      </div>
+      <img id="facturePhotoPreview" style="display:none"/>
+    </div>
+    <input type="hidden" id="editFactureId"/>
+    <button class="btn-primary" onclick="saveEditedFacture()">💾 Enregistrer les modifications</button>
+    <div id="factureMsg" class="msg-success"></div>
+    <div id="factureMsgErr" class="msg-error"></div>
+  </div>
+</div>
+
+
+
+  <!-- Historique des factures -->
+  <div class="card">
+    <h3>📋 Historique des Ventes</h3>
+    <div id="invoiceHistory"><p class="no-data">Chargement...</p></div>
+  </div>
+
+  <!-- Section Vendeur -->
+  <div id="vendeurSection" style="display:none">
+    <!-- Sélection des articles -->
+    <div class="card">
+      <h2>📦 Sélection des articles</h2>
+      <div class="stock-items">
+        <div id="stockList"></div>
+      </div>
+    </div>
+
+    <!-- Panier -->
+    <div class="card">
+      <h2>🛒 Panier</h2>
+      <div id="cartItems"></div>
+      <div class="cart-summary">
+        <h3>Résumé</h3>
+        <p>Nombre d'articles: <span id="cartCount">0</span></p>
+        <p>Total: <span id="cartTotal">$0.00</span></p>
+      </div>
+      <div class="cart-actions">
+        <button class="btn-primary" onclick="clearCart()">🗑️ Vider le panier</button>
+        <button class="btn-primary" onclick="openInvoiceModal()">📄 Générer une facture</button>
+      </div>
+    </div>
+
+    <!-- Modal de facturation -->
+    <div id="invoiceModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeInvoiceModal()">&times;</span>
+        <h2>📄 Prévisualisation de la facture</h2>
+        <div id="invoicePreview"></div>
+        <button class="btn-primary" onclick="generateInvoice()">📥 Générer la facture</button>
+        <div id="invoiceMsg" class="msg-success"></div>
+        <div id="invoiceMsgErr" class="msg-error"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  
+
+</script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTD - Vendeur</title>
+  <link rel="stylesheet" href="vendeur.css" />
+  <style>
+    /* Ajoutez ce style pour les grades */
+    .grade-debutant {
+      color: #8B0000; /* Rouge foncé */
+    }
+    .grade-intermediaire {
+      color: #FF8C00; /* Orange */
+    }
+    .grade-expert {
+      color: #006400; /* Vert foncé */
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ========== PAGE LOGIN ========== -->
+  <div id="pageLogin">
+  <h1>LTD</h1>
+    <p>Entrez votre code à 10 chiffres</p>
+    <input id="codeInput" type="text" maxlength="10" placeholder="Code à 10 chiffres" />
+    <br />
+    <button onclick="login()">Se connecter</button>
+    <p id="loginError" style="display:none" class="msg-error">❌ Code invalide ou introuvable</p>
+  </div>
+
+  <!-- ========== PAGE VENDEUR ========== -->
+  <div id="pageVendeur">
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="header-info">
+        <h2 id="vendeurNom"></h2>
+        <p style="margin-top:6px;color:#555;font-size:0.8rem" id="vendeurCode"></p>
+        <p id="vendeurGrade" style="margin-top:6px;color:#555;font-size:0.8rem"></p>
+      </div>
+      <button class="btn-logout" onclick="logout()">🚪 Déconnexion</button>
+    </div>
+    <!-- Ajouter cette section dans la div du vendeur, après la section du panier -->
+    <div class="card">
+      <h2>💰 Salaire</h2>
+      <div id="salaryDisplay">
+        <p class="no-data">Connectez-vous pour voir votre salaire</p>
+      </div>
+    </div>
+
+    <!-- Stock -->
+    <div class="card">
+      <h2>📦 Stock disponible</h2>
+      <div id="stockList"></div>
+    </div>
+
+    <!-- Panier -->
+    <div class="card">
+      <h2>🛒 Panier</h2>
+      <div id="cartPreview"></div>
+      <div class="cart-total">
+        <p>Total: <span id="cartTotal">$0.00</span></p>
+      </div>
+    </div>
+
+    <!-- Facturation -->
+    <div class="card">
+      <h2>📄 Facturation</h2>
+
+      <div class="form-group">
+        <label for="invoiceDescription">Description</label>
+        <textarea id="invoiceDescription" rows="3" placeholder="Description de la facture"></textarea>
+      </div>
+
+      <!-- Photo de la facture -->
+      <div class="form-group">
+        <label for="invoicePhotoFile">Photo de la facture (optionnel)</label>
+        <div class="upload-zone" id="invoiceUploadZone" onclick="document.getElementById('invoicePhotoFile').click()">
+          <span class="upload-icon">📸</span>
+          <p id="invoiceUploadText">Glissez une photo ou cliquez pour choisir</p>
+          <input type="file" id="invoicePhotoFile" accept="image/*" style="display: none;"
+            onchange="previewInvoicePhoto(event)" />
+        </div>
+        <img id="invoicePhotoPreview" style="display:none; max-width: 100%; margin-top: 10px;" />
+      </div>
+
+      <!-- Bouton de génération -->
+      <button class="btn-primary" onclick="generateInvoice()">📥 Générer la facture</button>
+      <div id="invoiceMsg" class="msg-success"></div>
+      <div id="invoiceMsgErr" class="msg-error"></div>
+    </div>
+
+    <!-- Historique des factures -->
+    <div class="card">
+      <h2>📋 Historique des factures</h2>
+      <div id="invoiceHistory"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script>
+    // Configuration Supabase
+    const supabaseUrl = 'https://buqsbkloueboxhrnxvkv.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1cXNia2xvdWVib3hocm54dmt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MDQ4NzgsImV4cCI6MjA4NzA4MDg3OH0.b5gkFFHRy_fXZXc6gECx7R7bDQQoclaPhXhgeN01Iec';
+    const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Variables globales
+    let currentEmployee = null;
+    let stockItems = [];
+    let cart = [];
+    let invoiceUploadedFile = null;
+
+    // Fonction de formatage monétaire
+    function formatMoney(amount) {
+      return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+
+    // Fonction de déconnexion
+    function logout() {
+      currentEmployee = null;
+      document.getElementById('pageLogin').style.display = 'flex';
+      document.getElementById('pageVendeur').style.display = 'none';
+      document.getElementById('codeInput').value = '';
+    }
+
+    // Fonction de connexion
+   async function login() {
+  const code = document.getElementById('codeInput').value.trim();
+
+  if (code.length !== 10) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+
+  const { data: employee, error } = await db
+    .from('employees')
+    .select('*')
+    .eq('code', code)
+    .in('role', ['vendeur', 'co_patron', 'rh']) // Ajout des rôles ici
+    .single();
+
+  if (error || !employee) {
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+
+  currentEmployee = employee;
+
+  // Masquer la page de connexion et afficher la page du vendeur
+  document.getElementById('pageLogin').style.display = 'none';
+  document.getElementById('pageVendeur').style.display = 'block';
+
+  // Mettre à jour les informations du vendeur
+  document.getElementById('vendeurNom').textContent = `${employee.prenom} ${employee.nom}`;
+  document.getElementById('vendeurCode').textContent = `Code: ${employee.code}`;
+
+  // Afficher le grade de l'utilisateur
+  const gradeElement = document.getElementById('vendeurGrade');
+  gradeElement.textContent = `Grade: ${employee.grade}`;
+
+  // Appliquer la couleur en fonction du grade
+  gradeElement.className = '';
+  switch(employee.grade.toLowerCase()) {
+    case 'débutant':
+    case 'debutant':
+      gradeElement.classList.add('grade-debutant');
+      break;
+    case 'intermédiaire':
+    case 'intermediaire':
+      gradeElement.classList.add('grade-intermediaire');
+      break;
+    case 'expert':
+      gradeElement.classList.add('grade-expert');
+      break;
+    case 'professionel':
+      gradeElement.classList.add('professionel');
+      break;
+  }
+
+  // Charger les articles du stock
+  await loadStockItems();
+
+  // Charger les informations de salaire
+  await loadSalaryInfo();
+}
+    // Charger les articles du stock
+   async function loadStockItems() {
+  const stockList = document.getElementById('stockList');
+  stockList.innerHTML = '<p class="no-data">Chargement...</p>';
+
+  const { data, error } = await db
+    .from('stock')
+    .select('*')
+    .gt('quantity', 0);
+
+  if (error) {
+    console.error('Erreur lors du chargement du stock:', error);
+    stockList.innerHTML = '<p class="no-data">Erreur lors du chargement du stock</p>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    stockList.innerHTML = '<p class="no-data">Aucun article disponible dans le stock</p>';
+    return;
+  }
+
+  stockItems = data;
+  stockList.innerHTML = '';
+
+  stockItems.forEach(item => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'stock-item';
+    itemElement.innerHTML = `
+      <h3>${item.product_name}</h3>
+      <p>Prix: $${formatMoney(item.price_per_unit)}</p>
+      <p>Disponible: ${item.quantity}</p>
+      <input type="number" class="item-quantity" min="1" max="${item.quantity}" value="1" data-id="${item.id}">
+      <button onclick="addToCart(${item.id})">🛒 Ajouter au panier</button>
+    `;
+    stockList.appendChild(itemElement);
+  });
+}
+
+
+    // Ajouter un article au panier
+    function addToCart(itemId) {
+      const quantityInput = document.querySelector(`.item-quantity[data-id="${itemId}"]`);
+      const quantity = parseInt(quantityInput.value);
+
+      if (isNaN(quantity) || quantity <= 0) {
+        alert('Veuillez entrer une quantité valide');
+        return;
+      }
+
+      const item = stockItems.find(i => i.id === itemId);
+
+      if (!item) {
+        alert('Article non trouvé');
+        return;
+      }
+
+      if (quantity > item.quantity) {
+        alert(`Quantité disponible: ${item.quantity}`);
+        return;
+      }
+
+      // Vérifier si l'article est déjà dans le panier
+      const existingItem = cart.find(i => i.id === itemId);
+
+      if (existingItem) {
+        // Mettre à jour la quantité
+        existingItem.quantity += quantity;
+      } else {
+        // Ajouter un nouvel article
+        cart.push({
+          id: itemId,
+          name: item.product_name,
+          price: item.price_per_unit,
+          quantity: quantity
+        });
+      }
+
+      updateCartPreview();
+    }
+
+    // Mettre à jour l'aperçu du panier
+    function updateCartPreview() {
+      const cartPreview = document.getElementById('cartPreview');
+      const cartTotalEl = document.getElementById('cartTotal');
+
+      if (cart.length === 0) {
+        cartPreview.innerHTML = '<p class="no-data">Votre panier est vide</p>';
+        cartTotalEl.textContent = '$0.00';
+        return;
+      }
+
+      let html = '';
+      let total = 0;
+
+      cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        html += `
+        <div class="cart-item">
+          <span>${item.name} (${item.quantity} x $${formatMoney(item.price)})</span>
+          <span>$${formatMoney(itemTotal)}</span>
+        </div>
+      `;
+      });
+
+      cartPreview.innerHTML = html;
+      cartTotalEl.textContent = `$${formatMoney(total)}`;
+    }
+
+    // Prévisualisation de la photo de la facture
+    function previewInvoicePhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Vérification du type de fichier
+      if (!file.type.match('image.*')) {
+        alert('Veuillez sélectionner une image valide');
+        return;
+      }
+
+      // Vérification de la taille du fichier (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La taille de la photo ne doit pas dépasser 5MB');
+        return;
+      }
+
+      invoiceUploadedFile = file;
+      document.getElementById('invoiceUploadText').textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('invoicePhotoPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Calcule le montant total du panier
+    function calculateTotalAmount() {
+      if (!cart || cart.length === 0) return 0;
+      return cart.reduce((sum, item) => {
+        return sum + (Number(item.price) * Number(item.quantity));
+      }, 0);
+    }
+
+    // Fonction pour calculer la prime en fonction du grade
+ function calculatePrime(totalAmount) {
+  if (!currentEmployee) {
+    console.error('Employé non défini');
+    return 0;
+  }
+
+  console.log('Grade de l\'employé:', currentEmployee.grade);
+  console.log('Rôle de l\'employé:', currentEmployee.role);
+
+  let primePercentage = 0;
+
+  // Vérifier le rôle de l'utilisateur
+  if (currentEmployee.role === 'co_patron') {
+    primePercentage = 45; // Pourcentage de prime pour co_patron
+  } else if (currentEmployee.role === 'rh') {
+    primePercentage = 35; // Pourcentage de prime pour rh
+  } else {
+    // Pour les vendeurs, utiliser le grade pour déterminer le pourcentage
+    switch (currentEmployee.grade.toLowerCase()) {
+      case 'débutant':
+      case 'debutant':
+        primePercentage = 20;
+        break;
+      case 'intermédiaire':
+      case 'intermediaire':
+        primePercentage = 25;
+        break;
+      case 'expert':
+        primePercentage = 30;
+        break;
+      case 'professionel':
+        primePercentage = 35;
+        break;
+      default:
+        console.error('Grade non reconnu:', currentEmployee.grade);
+        primePercentage = 0;
+    }
+  }
+
+  // Calculer la prime avec 2 décimales
+  const primeAmount = totalAmount * (primePercentage / 100);
+
+  // Arrondir à 2 décimales
+  return Math.round(primeAmount * 100) / 100;
+}
+
+
+    // Générer une facture
+   async function generateInvoice() {
+  console.log('Début de la génération de la facture');
+
+  // Vérification de la connexion
+  if (!currentEmployee) {
+    console.error('Utilisateur non connecté');
+    document.getElementById('invoiceMsgErr').textContent = '❌ Vous devez être connecté pour générer une facture';
+    document.getElementById('invoiceMsgErr').style.display = 'block';
+    return;
+  }
+
+  // Vérification du rôle de l'utilisateur
+  if (currentEmployee.role !== 'vendeur' && currentEmployee.role !== 'co_patron' && currentEmployee.role !== 'rh') {
+    console.error('Rôle non autorisé');
+    document.getElementById('invoiceMsgErr').textContent = '❌ Vous n\'avez pas les droits nécessaires pour générer une facture';
+    document.getElementById('invoiceMsgErr').style.display = 'block';
+    return;
+  }
+
+  // Vérification du panier
+  if (cart.length === 0) {
+    console.error('Panier vide');
+    document.getElementById('invoiceMsgErr').textContent = '❌ Votre panier est vide. Ajoutez des articles avant de générer une facture.';
+    document.getElementById('invoiceMsgErr').style.display = 'block';
+    return;
+  }
+
+  // Initialisation des éléments de l'interface
+  const descriptionInput = document.getElementById('invoiceDescription');
+  const msgOk = document.getElementById('invoiceMsg');
+  const msgErr = document.getElementById('invoiceMsgErr');
+  msgOk.style.display = 'none';
+  msgErr.style.display = 'none';
+
+  // Récupération des données
+  const description = descriptionInput.value.trim();
+  const totalAmount = calculateTotalAmount();
+
+  // Vérification des données
+  if (!description) {
+    msgErr.textContent = '❌ Veuillez entrer une description pour la facture';
+    msgErr.style.display = 'block';
+    return;
+  }
+
+  // Préparation des données de la facture
+  let imageUrl = null;
+  if (invoiceUploadedFile) {
+    try {
+      const fileExt = invoiceUploadedFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${currentEmployee.id}/invoices/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await db
+        .storage
+        .from('invoices')
+        .upload(filePath, invoiceUploadedFile);
+
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Erreur lors du téléversement de la photo');
+      }
+
+      imageUrl = `${supabaseUrl}/storage/v1/object/public/invoices/${filePath}`;
+    } catch (uploadErr) {
+      console.error('Erreur lors du traitement de la photo:', uploadErr);
+      msgErr.textContent = `❌ Erreur lors du traitement de la photo: ${uploadErr.message}`;
+      msgErr.style.display = 'block';
+      return;
+    }
+  }
+
+  // Préparer les données des articles avec leurs quantités
+  const itemsData = cart.map(item => ({
+    product_id: item.id,
+    product_name: item.name,
+    quantity: item.quantity,
+    price: item.price
+  }));
+
+  // Calculer la quantité totale
+  const totalQuantity = cart.reduce((total, item) => total + item.quantity, 0);
+
+  // Calculer la prime
+  const primeAmount = calculatePrime(totalAmount);
+
+  // Insertion de la facture dans la base de données
+  try {
+    const { data: invoiceData, error: dbError } = await db.from('invoices').insert({
+      amount: totalAmount,
+      description: description,
+      image_url: imageUrl,
+      created_by: currentEmployee.id,
+      employee_id: currentEmployee.id,
+      quantity: totalQuantity,
+      items: itemsData
+    }).select();
+
+    if (dbError) {
+      throw new Error(dbError.message || 'Erreur lors de l\'insertion de la facture');
+    }
+
+    // Enregistrer la prime dans la table primes
+    const { error: primeError } = await db.from('primes').insert({
+      employee_id: currentEmployee.id,
+      items_count: totalQuantity,
+      total_vente: totalAmount,
+      prime_montant: primeAmount,
+      grade: currentEmployee.grade,
+      role: currentEmployee.role // Ajout du rôle dans les données de la prime
+    });
+
+    if (primeError) {
+      console.error('Erreur lors de l\'enregistrement de la prime:', primeError);
+    }
+
+    // Mettre à jour le stock dans la base de données
+    for (const item of cart) {
+      const { data: stockRow, error: stockReadError } = await db
+        .from('stock')
+        .select('quantity')
+        .eq('id', item.id)
+        .single();
+
+      if (stockReadError || !stockRow) {
+        console.error("Erreur lecture stock :", stockReadError);
+        continue;
+      }
+
+      const nouvelleQuantite = stockRow.quantity - item.quantity;
+
+      // Empêcher le stock négatif
+      if (nouvelleQuantite < 0) {
+        alert(`Stock insuffisant pour ${item.name}`);
+        return;
+      }
+
+      const { error: stockUpdateError } = await db
+        .from('stock')
+        .update({ quantity: nouvelleQuantite })
+        .eq('id', item.id);
+
+      if (stockUpdateError) {
+        console.error("Erreur mise à jour stock :", stockUpdateError);
+      }
+    }
+
+    // Affichage du message de succès
+    msgOk.textContent = `✅ Facture générée avec succès. Prime de ${primeAmount.toFixed(2)} €`;
+    msgOk.style.display = 'block';
+
+    // RESET formulaire
+    descriptionInput.value = '';
+    document.getElementById('invoicePhotoPreview').style.display = 'none';
+    document.getElementById('invoicePhotoPreview').src = '';
+    document.getElementById('invoicePhotoFile').value = '';
+    document.getElementById('invoiceUploadText').textContent = 'Glissez une photo ou cliquez pour choisir';
+    invoiceUploadedFile = null;
+
+    // Vider le panier
+    cart = [];
+    updateCartPreview();
+
+    // Mettre à jour l'historique et le stock
+    await loadInvoiceHistory();
+    await loadStockItems();
+  } catch (error) {
+    console.error('Erreur lors de la génération de la facture:', error);
+    msgErr.textContent = `❌ Erreur lors de la génération de la facture: ${error.message}`;
+    msgErr.style.display = 'block';
+  }
+}
+
+
+
+    // Charger l'historique des factures
+    async function loadInvoiceHistory() {
+      const historyDiv = document.getElementById('invoiceHistory');
+      historyDiv.innerHTML = '<p class="no-data">Chargement...</p>';
+
+      const { data, error } = await db
+        .from('invoices')
+        .select('*')
+        .eq('created_by', currentEmployee.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur lors du chargement des factures:', error);
+        historyDiv.innerHTML = '<p class="no-data">Erreur lors du chargement des factures</p>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        historyDiv.innerHTML = '<p class="no-data">Aucune facture trouvée</p>';
+        return;
+      }
+
+      let html = `
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Montant</th>
+            <th>Photo</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+      data.forEach(invoice => {
+        const date = new Date(invoice.created_at).toLocaleString('fr-FR');
+        const photoCell = invoice.image_url
+          ? `<td><img src="${invoice.image_url}" alt="facture" style="max-width: 100px; max-height: 100px;"/></td>`
+          : '<td><span style="color:#555">Pas de photo</span></td>';
+
+        html += `
+        <tr>
+          <td>${date}</td>
+          <td>${invoice.description}</td>
+          <td>$${formatMoney(invoice.amount)}</td>
+          ${photoCell}
+        </tr>
+      `;
+      });
+
+      html += `
+        </tbody>
+      </table>
+    `;
+
+      historyDiv.innerHTML = html;
+    }
+
+    // Charger les informations de salaire
+    async function loadSalaryInfo() {
+  if (!currentEmployee) return;
+
+  const salaryDisplay = document.getElementById('salaryDisplay');
+  salaryDisplay.innerHTML = '<p class="no-data">Chargement des informations de salaire...</p>';
+
+  try {
+    // Récupérer les primes de l'employé
+    const { data: primes, error: primesError } = await db
+      .from('primes')
+      .select('*')
+      .eq('employee_id', currentEmployee.id)
+      .order('created_at', { ascending: false });
+
+    if (primesError) {
+      throw new Error(primesError.message || 'Erreur lors du chargement des primes');
+    }
+
+    // Calculer le salaire total
+    const totalSalary = primes.reduce((sum, prime) => sum + prime.prime_montant, 0);
+
+    // Afficher les informations de salaire
+    let html = `
+      <p><strong>Salaire total:</strong> ${formatMoney(totalSalary)} €</p>
+      <p><strong>Dernière prime:</strong> ${primes.length > 0 ? formatMoney(primes[0].prime_montant) : 'Aucune prime'} €</p>
+      <p><strong>Grade:</strong> ${currentEmployee.grade}</p>
+    `;
+
+    salaryDisplay.innerHTML = html;
+  } catch (error) {
+    console.error('Erreur lors du chargement des informations de salaire:', error);
+    salaryDisplay.innerHTML = '<p class="msg-error">Erreur lors du chargement des informations de salaire</p>';
+  }
+}
+
+  </script>
+
+</body>
+
+</html>
