@@ -1786,43 +1786,56 @@ async function createEmployee() {
   msgErr.style.display = 'none';
 
   // Validation des champs
-  if (!prenom || !nom || !role || !code) {
+  if (!prenom || !nom || !role || !grade || !code) {
     msgErr.textContent = '❌ Tous les champs sont obligatoires';
     msgErr.style.display = 'block';
     return;
   }
 
   if (code.length !== 10 || !/^\d+$/.test(code)) {
-    msgErr.textContent = '❌ Le code doit contenir exactement 10 chiffres';
+    msgErr.textContent = '❌ Le code doit contenir 10 chiffres';
+    msgErr.style.display = 'block';
+    return;
+  }
+
+  // Vérification des rôles valides
+  const validRoles = ['patron', 'employe', 'livreur', 'comptable', 'securite', 'rh'];
+  if (!validRoles.includes(role.toLowerCase())) {
+    msgErr.textContent = '❌ Rôle invalide. Les rôles valides sont : patron, employe, livreur, comptable, securite, rh';
     msgErr.style.display = 'block';
     return;
   }
 
   try {
-    // Vérifier si le code existe déjà
-    const { data: existingEmps, error: existingError } = await db
+    // Vérification de l'unicité du code
+    const { data: existingEmployee, error: existingEmployeeError } = await db
       .from('employees')
       .select('*')
-      .eq('code', code);
+      .eq('code', code)
+      .limit(1);
 
-    if (existingError) throw existingError;
+    if (existingEmployeeError) throw existingEmployeeError;
 
-    if (existingEmps && existingEmps.length > 0) {
+    if (existingEmployee && existingEmployee.length > 0) {
       msgErr.textContent = '❌ Un employé avec ce code existe déjà';
       msgErr.style.display = 'block';
       return;
     }
 
-    // Créer l'employé
-    const { data: newEmp, error: createError } = await db
+    // Création de l'employé
+    const { data: newEmployee, error: createError } = await db
       .from('employees')
-      .insert({
-        prenom,
-        nom,
-        role,
-        grade,
-        code
-      })
+      .insert([
+        {
+          prenom,
+          nom,
+          role: role.toLowerCase(),
+          grade,
+          code,
+          account_balance: 0,
+          created_at: new Date().toISOString()
+        }
+      ])
       .select()
       .single();
 
