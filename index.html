@@ -159,7 +159,33 @@
 
     </div>
   </div>
+<div class="card">
+    <h3>📦 Déclarer une vente</h3>
 
+    <div class="form-group">
+      <label>Nombre d'items</label>
+      <input id="itemsInput" type="number" min="0" oninput="updateItemsCalc()" placeholder="Ex: 10"/>
+    </div>
+
+    <div class="calc-box">
+      <div class="calc-total" id="calcResult">Entrez un nombre d'items...</div>
+      <div id="primeResult"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Photo du bucket</label>
+      <div class="upload-zone" id="uploadZone">
+        <span class="upload-icon">📸</span>
+        <p id="upload-text">Glisse une photo ou clique pour choisir</p>
+        <input type="file" id="photoFile" accept="image/*" onchange="previewPhoto(event)"/>
+      </div>
+      <img id="photoPreview" style="display:none"/>
+    </div>
+
+    <button class="btn-primary" onclick="submitVente()">✅ Envoyer la vente</button>
+    <div id="venteMsg" class="msg-success"></div>
+    <div id="venteMsgErr" class="msg-error"></div>
+  </div>
   <!-- Stats globales -->
   
   <div class="stats-grid">
@@ -421,4 +447,5 @@
 <script src="script.js"></script>
 </body>
 </html>
+
 
